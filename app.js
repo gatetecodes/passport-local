@@ -23,14 +23,28 @@ require('dotenv').config();
 var app = express();
 
 app.use(express.json());
-app.use(express.urlencoded({extended: true}));
-
+app.use(express.urlencoded({ extended: true }));
 
 /**
  * -------------- SESSION SETUP ----------------
  */
 
-// TODO
+const sessionStore = new MongoStore({
+  mongooseConnection: connection,
+  collection: 'sessions',
+});
+
+app.use(
+  session({
+    secret: process.env.SECRET,
+    resave: false,
+    saveUninitialized: true,
+    store: sessionStore,
+    cookie: {
+      maxAge: 1000 * 60 * 60 * 24, // 1 day
+    },
+  })
+);
 
 /**
  * -------------- PASSPORT AUTHENTICATION ----------------
@@ -39,6 +53,11 @@ app.use(express.urlencoded({extended: true}));
 app.use(passport.initialize());
 app.use(passport.session());
 
+app.use((req, res, next) => {
+  console.log(req.session);
+  console.log(req.user);
+  next();
+});
 
 /**
  * -------------- ROUTES ----------------
@@ -46,7 +65,6 @@ app.use(passport.session());
 
 // Imports all of the routes from ./routes/index.js
 app.use(routes);
-
 
 /**
  * -------------- SERVER ----------------
